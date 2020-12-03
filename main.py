@@ -1,7 +1,9 @@
 import pygame
 from random import randint
 import uuid
+import os
 
+base_path = os.path.dirname(__file__)
 pygame.init()
 
 screen_size = 1000
@@ -10,19 +12,21 @@ alive_monsters = []
 
 MAX_MONSTERS_COUNT = 20
 
-def getMonster():
+def get_monster():
     monster = dict()
-    monster['image'] = 'src/cat.png'
-    monster['id'] = uuid.uuid4()
+    monster['image'] = 'resources/PNG/Woman Green/womanGreen_machine.png'
+    monster['id'] = uuid.uuid4().__str__()
     return monster
 
 monster_positions = dict()
 
-def getMonsterNextPosition(monster, playerPosition):
-    current_monster_position = monster_positions[monster['id']]
-    if (current_monster_position is None):
-        current_monster_position = getStartPosition()
+def get_monster_next_position(monster, playerPosition):
+    has_position = monster['id'] in monster_positions
+    current_monster_position = (0, 0)
+    if (has_position == False):
+        current_monster_position = get_start_position()
     else:
+        current_monster_position = monster_positions[monster['id']]
         new_x_position = 0
         if current_monster_position[0] < playerPosition[0]:
             new_x_position = current_monster_position[0] + 1
@@ -39,8 +43,8 @@ def getMonsterNextPosition(monster, playerPosition):
 
     return monster_positions[monster['id']]
 
-def getStartPosition():
-    edge = bool(randint(1, 4))
+def get_start_position():
+    edge = randint(1, 4)
     if edge == 1:
         return (0, randint(0, screen_size))
     elif edge == 2:
@@ -51,6 +55,12 @@ def getStartPosition():
         return (randint(0, screen_size), screen_size)
 
 screen = pygame.display.set_mode([screen_size, screen_size])
+
+shooter = dict()
+shooter['id'] = uuid.uuid4().__str__()
+shooter['image'] = 'resources/PNG/Woman Green/womanGreen_machine.png'
+
+shooter_position = (screen_size / 2, screen_size / 2)
 
 running = True
 while running:
@@ -66,13 +76,16 @@ while running:
 
 
     if (len(alive_monsters) < MAX_MONSTERS_COUNT):
-        monster = getMonster()
+        monster = get_monster()
         alive_monsters.append(monster)
 
     for monster in alive_monsters:
-        # Draw a solid blue circle in the center
-        # pygame.draw.circle(screen, (0, 0, 255), (250, 250), 75)
+        monster_image_path = os.path.join(base_path, shooter['image'])
+        monster_position = get_monster_next_position(monster, shooter_position)
+        screen.blit(pygame.image.load(monster_image_path), monster_position)
 
+    path = os.path.join(base_path, shooter['image'])
+    screen.blit(pygame.image.load(path), shooter_position)
 
     # Flip the display
     pygame.display.flip()
