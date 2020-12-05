@@ -5,6 +5,7 @@ import os
 
 base_path = os.path.dirname(__file__)
 pygame.init()
+BLACK = (0, 0, 0)
 
 screen_size = 1000
 
@@ -64,6 +65,7 @@ shooter['id'] = uuid.uuid4().__str__()
 shooter['image'] = 'resources/PNG/Woman Green/womanGreen_machine.png'
 
 shooter_position = (screen_size / 2, screen_size / 2)
+bullets = []
 
 running = True
 while running:
@@ -72,6 +74,14 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        if event.type == pygame.MOUSEBUTTONUP:
+            pos = pygame.mouse.get_pos()
+            bullet = dict()
+            bullet['target'] = pos
+            bullet['start_position'] = shooter_position
+            bullet['current_position'] = shooter_position
+            bullets.append(bullet)
+
     keys = pygame.key.get_pressed()
     if keys[pygame.K_d]:
         shooter_position = (shooter_position[0] + 1, shooter_position[1])
@@ -89,6 +99,9 @@ while running:
     if (len(alive_monsters) < MAX_MONSTERS_COUNT):
         monster = get_monster()
         alive_monsters.append(monster)
+
+    for bullet in bullets:
+        pygame.draw.circle(screen, BLACK, bullet['current_position'], 2)
 
     for monster in alive_monsters:
         monster_image_path = os.path.join(base_path, shooter['image'])
