@@ -72,6 +72,16 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_d]:
+        shooter_position = (shooter_position[0] + 1, shooter_position[1])
+    if keys[pygame.K_a]:
+        shooter_position = (shooter_position[0] - 1, shooter_position[1])
+    if keys[pygame.K_w]:
+        shooter_position = (shooter_position[0], shooter_position[1] - 1)
+    if keys[pygame.K_s]:
+        shooter_position = (shooter_position[0], shooter_position[1] + 1)
+
 
     # Fill the background with white
     screen.fill((255, 255, 255))
