@@ -20,28 +20,31 @@ def get_monster():
 
 monster_positions = dict()
 
-def get_monster_next_position(monster, playerPosition):
+def get_monster_next_position(monster, playerPosition, timestamp):
     has_position = monster['id'] in monster_positions
     current_monster_position = (0, 0)
     if (has_position == False):
         current_monster_position = get_start_position()
     else:
+        update_modifier = 1 if timestamp % 5 == 0 else 0
         current_monster_position = monster_positions[monster['id']]
         new_x_position = 0
         if current_monster_position[0] < playerPosition[0]:
-            new_x_position = current_monster_position[0] + 1
+            new_x_position = current_monster_position[0] + 1 * update_modifier
         else:
-            new_x_position = current_monster_position[0] - 1
+            new_x_position = current_monster_position[0] - 1 * update_modifier
         new_y_position = 0
         if current_monster_position[1] < playerPosition[1]:
-            new_y_position = current_monster_position[1] + 1
+            new_y_position = current_monster_position[1] + 1 * update_modifier
         else:
-            new_y_position = current_monster_position[1] - 1
+            new_y_position = current_monster_position[1] - 1 * update_modifier
         current_monster_position = (new_x_position, new_y_position)
 
     monster_positions[monster['id']] = current_monster_position
 
     return monster_positions[monster['id']]
+
+timestamp = 0
 
 def get_start_position():
     edge = randint(1, 4)
@@ -73,21 +76,21 @@ while running:
     # Fill the background with white
     screen.fill((255, 255, 255))
 
-
-
     if (len(alive_monsters) < MAX_MONSTERS_COUNT):
         monster = get_monster()
         alive_monsters.append(monster)
 
     for monster in alive_monsters:
         monster_image_path = os.path.join(base_path, shooter['image'])
-        monster_position = get_monster_next_position(monster, shooter_position)
+        monster_position = get_monster_next_position(monster, shooter_position, timestamp)
         screen.blit(pygame.image.load(monster_image_path), monster_position)
 
     path = os.path.join(base_path, shooter['image'])
     screen.blit(pygame.image.load(path), shooter_position)
 
     # Flip the display
+    timestamp = (timestamp + 1) % 5
+
     pygame.display.flip()
 
 # Done! Time to quit.
