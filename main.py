@@ -1,6 +1,7 @@
 import pygame
 from random import randint
 import uuid
+import math
 import os
 from math import sqrt, sin
 
@@ -79,6 +80,21 @@ def update_bullets_position(bullets):
         bullet['current_position'] = (bullet['current_position'][0] + (dx / dist) * bullet_speed, bullet['current_position'][1] + (dy / dist) * bullet_speed)
     return bullets
 
+def rotate_angle(dst_position, position):
+    # Align vector at (0, 0)
+    vec = (dst_position[0] - position[0], dst_position[1] - position[1])
+    # Orientation vector. Assuming it's same for all sprites
+    orientation = (1, 0)
+    # Vector scalar multiplication
+    mul = vec[0] * orientation[0] + vec[1] * orientation[1]
+    # Vector Euclidean length. Orientation vector length is always 1
+    len = sqrt(vec[0] ** 2 + vec[1] ** 2)
+    # Angle consine
+    cos_a = mul / len
+
+    # Pygame transforms in degrees
+    return math.acos(cos_a) * 180 / math.pi
+
 
 running = True
 monster_positions = dict()
@@ -105,7 +121,6 @@ while running:
     if keys[pygame.K_s]:
         shooter_position = (shooter_position[0], shooter_position[1] + 1)
 
-
     # Fill the background with white
     screen.fill((255, 255, 255))
 
@@ -123,7 +138,10 @@ while running:
         screen.blit(pygame.image.load(monster_image_path), monster_position)
 
     path = os.path.join(base_path, shooter['image'])
-    screen.blit(pygame.image.load(path), shooter_position)
+
+    rotated = pygame.transform.rotate(pygame.image.load(path), rotate_angle(pygame.mouse.get_pos(), shooter_position))
+    new_rect = rotated_image.get_rect(center = shooter_position).top_left
+    screen.blit(rotated, new_rect)
 
     # Flip the display
     timestamp = (timestamp + 1) % 5
