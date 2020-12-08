@@ -2,14 +2,13 @@ import pygame
 from random import randint
 import uuid
 import os
+from math import sqrt, sin
 
 base_path = os.path.dirname(__file__)
 pygame.init()
 BLACK = (0, 0, 0)
 
 screen_size = 1000
-
-alive_monsters = []
 
 MAX_MONSTERS_COUNT = 20
 
@@ -18,8 +17,6 @@ def get_monster():
     monster['image'] = 'resources/PNG/Woman Green/womanGreen_machine.png'
     monster['id'] = uuid.uuid4().__str__()
     return monster
-
-monster_positions = dict()
 
 def get_monster_next_position(monster, playerPosition, timestamp):
     has_position = monster['id'] in monster_positions
@@ -45,7 +42,6 @@ def get_monster_next_position(monster, playerPosition, timestamp):
 
     return monster_positions[monster['id']]
 
-timestamp = 0
 
 def get_start_position():
     edge = randint(1, 4)
@@ -58,29 +54,46 @@ def get_start_position():
     elif edge == 4:
         return (randint(0, screen_size), screen_size)
 
+def create_shooter():
+    shooter = dict()
+    shooter['id'] = uuid.uuid4().__str__()
+    shooter['image'] = 'resources/PNG/Woman Green/womanGreen_machine.png'
+    return shooter
+
+timestamp = 0
 screen = pygame.display.set_mode([screen_size, screen_size])
 
-shooter = dict()
-shooter['id'] = uuid.uuid4().__str__()
-shooter['image'] = 'resources/PNG/Woman Green/womanGreen_machine.png'
+def get_bullet(shooter):
+    bullet = dict()
+    bullet['target'] = pos
+    bullet['start_position'] = shooter
+    bullet['current_position'] = shooter
+    return bullet
 
-shooter_position = (screen_size / 2, screen_size / 2)
-bullets = []
+def update_bullets_position(bullets):
+    bullet_speed = 3
+    for bullet in bullets:
+        dx = bullet['target'][0] - bullet['start_position'][0]
+        dy = bullet['target'][1] - bullet['start_position'][1]
+        dist = sqrt(dx ** 2 + dy ** 2)
+        bullet['current_position'] = (bullet['current_position'][0] + (dx / dist) * bullet_speed, bullet['current_position'][1] + (dy / dist) * bullet_speed)
+    return bullets
+
 
 running = True
+monster_positions = dict()
+shooter_position = (screen_size / 2, screen_size / 2)
+alive_monsters = []
+bullets = []
+shooter = create_shooter()
 while running:
-
     # Did the user click the window close button?
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
         if event.type == pygame.MOUSEBUTTONUP:
             pos = pygame.mouse.get_pos()
-            bullet = dict()
-            bullet['target'] = pos
-            bullet['start_position'] = shooter_position
-            bullet['current_position'] = shooter_position
-            bullets.append(bullet)
+            bullets.append(get_bullet(shooter_position))
 
     keys = pygame.key.get_pressed()
     if keys[pygame.K_d]:
@@ -100,6 +113,7 @@ while running:
         monster = get_monster()
         alive_monsters.append(monster)
 
+    bullets = update_bullets_position(bullets)
     for bullet in bullets:
         pygame.draw.circle(screen, BLACK, bullet['current_position'], 2)
 
