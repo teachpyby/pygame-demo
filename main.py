@@ -86,8 +86,7 @@ def rotate_angle(dst_position, sprite):
 
     cos_a = mul / len
     sign = 0 if vec[1] == 0 else vec[1] / abs(vec[1])
-    return sign * math.acos(cos_a) * 180 / math.pi
-
+    return (-1 * sign) * math.acos(cos_a) * 180 / math.pi
 
 pygame.init()
 screen_size = 1000
