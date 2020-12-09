@@ -1,47 +1,44 @@
 import pygame
 from random import randint
 import uuid
+import math
 import os
 from math import sqrt, sin
 
-base_path = os.path.dirname(__file__)
-pygame.init()
 BLACK = (0, 0, 0)
-
+MAX_MONSTERS_COUNT = 20
+BASE_PATH = os.path.dirname(__file__)
+base_path = BASE_PATH
 screen_size = 1000
 
-MAX_MONSTERS_COUNT = 20
+MONSTERS = [
+    'Hitman 1/hitman1_silencer.png',
+    'Man Blue/manBlue_silencer.png',
+    'Robot 1/robot1_silencer.png'
+]
 
-def get_monster():
-    monster = dict()
-    monster['image'] = 'resources/PNG/Woman Green/womanGreen_machine.png'
-    monster['id'] = uuid.uuid4().__str__()
-    return monster
+def load_sprite(name, x = 0, y = 0):
+    img = os.path.join(BASE_PATH, 'resources', 'PNG', name)
+    return { 'x': x, 'y': y,
+             'dx': 0, 'dy': 0,
+             'rotate': 0,
+             'image': pygame.image.load(img) }
 
-def get_monster_next_position(monster, playerPosition, timestamp):
-    has_position = monster['id'] in monster_positions
-    current_monster_position = (0, 0)
-    if (has_position == False):
-        current_monster_position = get_start_position()
+def get_monster_next_position(monster, player_position, timestamp):
+    update_modifier = 1 if timestamp % 5 == 0 else 0
+    current_monster_position = (monster['x'], monster['y'])
+    new_x_position = 0
+    if current_monster_position[0] < player_position[0]:
+        new_x_position = current_monster_position[0] + 1 * update_modifier
     else:
-        update_modifier = 1 if timestamp % 5 == 0 else 0
-        current_monster_position = monster_positions[monster['id']]
-        new_x_position = 0
-        if current_monster_position[0] < playerPosition[0]:
-            new_x_position = current_monster_position[0] + 1 * update_modifier
-        else:
-            new_x_position = current_monster_position[0] - 1 * update_modifier
-        new_y_position = 0
-        if current_monster_position[1] < playerPosition[1]:
-            new_y_position = current_monster_position[1] + 1 * update_modifier
-        else:
-            new_y_position = current_monster_position[1] - 1 * update_modifier
-        current_monster_position = (new_x_position, new_y_position)
+        new_x_position = current_monster_position[0] - 1 * update_modifier
+    new_y_position = 0
+    if current_monster_position[1] < player_position[1]:
+        new_y_position = current_monster_position[1] + 1 * update_modifier
+    else:
+        new_y_position = current_monster_position[1] - 1 * update_modifier
 
-    monster_positions[monster['id']] = current_monster_position
-
-    return monster_positions[monster['id']]
-
+    return (new_x_position, new_y_position)
 
 def get_start_position():
     edge = randint(1, 4)
@@ -53,12 +50,6 @@ def get_start_position():
         return (screen_size, randint(0, screen_size))
     elif edge == 4:
         return (randint(0, screen_size), screen_size)
-
-def create_shooter():
-    shooter = dict()
-    shooter['id'] = uuid.uuid4().__str__()
-    shooter['image'] = 'resources/PNG/Woman Green/womanGreen_machine.png'
-    return shooter
 
 timestamp = 0
 screen = pygame.display.set_mode([screen_size, screen_size])
@@ -79,13 +70,38 @@ def update_bullets_position(bullets):
         bullet['current_position'] = (bullet['current_position'][0] + (dx / dist) * bullet_speed, bullet['current_position'][1] + (dy / dist) * bullet_speed)
     return bullets
 
+def rotate_angle(dst_position, sprite):
+    """
+    Определяет угол, на который нужно повернуть спрайт, чтобы тот был ориентирован
+    в определенную точку.
+    """
+    position = (sprite['x'], sprite['y'])
+    vec = (dst_position[0] - position[0], dst_position[1] - position[1])
+    orientation = (1, 0)
+    mul = vec[0] * orientation[0] + vec[1] * orientation[1]
+    len = sqrt(vec[0] ** 2 + vec[1] ** 2)
+
+    if len == 0:
+        return sprite['rotate']
+
+    cos_a = mul / len
+    sign = 0 if vec[1] == 0 else vec[1] / abs(vec[1])
+    return (-1 * sign) * math.acos(cos_a) * 180 / math.pi
+
+pygame.init()
+screen_size = 1000
 
 running = True
 monster_positions = dict()
-shooter_position = (screen_size / 2, screen_size / 2)
 alive_monsters = []
 bullets = []
-shooter = create_shooter()
+
+shooter = load_sprite('Woman Green/womanGreen_machine.png',
+                      x = screen_size / 2, y = screen_size / 2)
+
+world = []
+world.append(shooter)
+
 while running:
     # Did the user click the window close button?
     for event in pygame.event.get():
@@ -93,37 +109,46 @@ while running:
             running = False
         if event.type == pygame.MOUSEBUTTONUP:
             pos = pygame.mouse.get_pos()
-            bullets.append(get_bullet(shooter_position))
+            bullets.append(get_bullet((shooter['x'], shooter['y'])))
 
     keys = pygame.key.get_pressed()
     if keys[pygame.K_d]:
-        shooter_position = (shooter_position[0] + 1, shooter_position[1])
-    if keys[pygame.K_a]:
-        shooter_position = (shooter_position[0] - 1, shooter_position[1])
-    if keys[pygame.K_w]:
-        shooter_position = (shooter_position[0], shooter_position[1] - 1)
-    if keys[pygame.K_s]:
-        shooter_position = (shooter_position[0], shooter_position[1] + 1)
+        shooter['x'] = shooter['x'] + 1
+    elif keys[pygame.K_a]:
+        shooter['x'] = shooter['x'] - 1
+    elif keys[pygame.K_w]:
+        shooter['y'] = shooter['y'] - 1
+    elif keys[pygame.K_s]:
+        shooter['y'] = shooter['y'] + 1
 
+    shooter['rotate'] = rotate_angle(pygame.mouse.get_pos(), shooter)
 
     # Fill the background with white
     screen.fill((255, 255, 255))
 
-    if (len(alive_monsters) < MAX_MONSTERS_COUNT):
-        monster = get_monster()
+    if len(alive_monsters) < MAX_MONSTERS_COUNT:
+        spawn_x, spawn_y = get_start_position()
+        monster = load_sprite(MONSTERS[randint(0, len(MONSTERS) - 1)], x = spawn_x, y = spawn_y)
         alive_monsters.append(monster)
+        world.append(monster)
 
     bullets = update_bullets_position(bullets)
     for bullet in bullets:
         pygame.draw.circle(screen, BLACK, bullet['current_position'], 2)
 
     for monster in alive_monsters:
-        monster_image_path = os.path.join(base_path, shooter['image'])
-        monster_position = get_monster_next_position(monster, shooter_position, timestamp)
-        screen.blit(pygame.image.load(monster_image_path), monster_position)
+        player_position = (shooter['x'], shooter['y'])
+        monster_position = get_monster_next_position(monster, player_position, timestamp)
+        monster['x'] = monster_position[0]
+        monster['y'] = monster_position[1]
+        monster['rotate'] = rotate_angle((shooter['x'], shooter['y']), monster)
 
-    path = os.path.join(base_path, shooter['image'])
-    screen.blit(pygame.image.load(path), shooter_position)
+    for e in world:
+        image = e['image']
+        rotated_image = pygame.transform.rotate(image, e['rotate'])
+        rorated_rect = rotated_image.get_rect(center = image.get_rect(center = (e['x'], e['y'])).center)
+
+        screen.blit(rotated_image, rorated_rect.topleft)
 
     # Flip the display
     timestamp = (timestamp + 1) % 5
