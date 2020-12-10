@@ -10,7 +10,7 @@ MAX_MONSTERS_COUNT = 20
 BASE_PATH = os.path.dirname(__file__)
 
 NPC_SPEED        = 0.05
-PROJECTILE_SPEED = 1
+PROJECTILE_SPEED = 5
 
 BULLET = lambda pos: pygame.draw.circle(screen, BLACK, pos, 2)
 
@@ -89,6 +89,9 @@ def sprite_aim(sprite, dst_position):
     cos_a = mul / len
     sign = 0 if vec[1] == 0 else vec[1] / abs(vec[1])
     return -1  * sign * math.acos(cos_a) * 180 / math.pi
+
+def sprite_dispose(sprite):
+    return sprite.get('dispose', False)
 
 ### NPC
 
@@ -193,32 +196,24 @@ while running:
         npcs.append(monster)
         world.append(monster)
 
-    remove_projectiles = []
     screen_box = pygame.Rect(0, 0, screen_size, screen_size)
     for projectile in projectiles:
         projectile['x'] = projectile['x'] + projectile['dx'] * PROJECTILE_SPEED
         projectile['y'] = projectile['y'] + projectile['dy'] * PROJECTILE_SPEED
 
         if not screen_box.collidepoint(projectile['x'], projectile['y']):
-            remove_projectiles.append(projectile)
+            projectile['dispose'] = True
 
-    for projectile in remove_projectiles:
-        projectiles.remove(projectile)
-        world.remove(projectile)
+        for npc in npcs:
+            if sprite_box(npc).collidepoint(projectile['x'], projectile['y']):
+                npc['dispose'] = True
 
-    dead_npcs = []
     for npc in npcs:
         npc_update(ticks_delta, npc, player)
-        # Проверяем не хитнул ли нас кто
-        for projectile in projectiles:
-            if sprite_box(npc).collidepoint(sprite_position(projectile)):
-                if npc not in dead_npcs:
-                    dead_npcs.append(npc)
 
-    for dead in dead_npcs:
-        npcs.remove(dead)
-        world.remove(dead)
-
+    npcs        = [n for n in npcs if not sprite_dispose(n)]
+    projectiles = [p for p in projectiles if not sprite_dispose(p)]
+    world       = [w for w in world if not sprite_dispose(w)]
     ##### Draw
     # Fill the background with white
     screen.fill((255, 255, 255))
