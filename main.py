@@ -3,6 +3,7 @@ from random import randint
 import uuid
 import math
 import os
+import functools
 from math import sqrt, sin
 
 BLACK = (0, 0, 0)
@@ -17,8 +18,26 @@ BULLET = lambda pos: pygame.draw.circle(screen, BLACK, pos, 2)
 MONSTERS = [
     'Hitman 1/hitman1_silencer.png',
     'Man Blue/manBlue_silencer.png',
-    'Robot 1/robot1_silencer.png'
+    'Man Brown/manBrown_silencer.png',
+    'Robot 1/robot1_silencer.png',
+    'Soldier 1/soldier1_silencer.png',
+    'Survivor 1/survivor1_silencer.png',
+    'Zombie 1/zoimbie1_silencer.png',
+    'Man Old/manOld_silencer.png',
 ]
+
+### Resources
+
+@functools.lru_cache(None)
+def load_image(image):
+    """
+    Загружает каждую текстуру только один раз. Для последующих вызовов с тем же
+    аргументом возвращает закэшированный результат.
+    """
+    print("load_image: loading " + image)
+    image = os.path.join(BASE_PATH, 'resources', 'PNG', image)
+    image = pygame.image.load(image)
+    return image
 
 ### Sprite
 
@@ -29,8 +48,7 @@ def sprite_load(x = 0, y = 0, image = None, draw_fn = None):
     принимает позицию и рисует что-то на экране.
     """
     if image:
-        image = os.path.join(BASE_PATH, 'resources', 'PNG', image)
-        image = pygame.image.load(image)
+        image = load_image(image)
 
     return { 'x': x, 'y': y, 'rotate': 0,
              'image':  image, 'draw_fn': draw_fn }
