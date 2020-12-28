@@ -9,6 +9,9 @@ from math import sqrt, sin
 running = True
 
 ticks_last = 0
+nextDirection = 0
+
+pygame.init()
 
 # directions
 # 0 - up
@@ -16,15 +19,13 @@ ticks_last = 0
 # 2 - down
 # 3 - right
 
-nextDirection = 0
-
-
-pygame.init()
-
 # return if snake alive or not
 # increase snake if snake eat an apple
-def move_snake(snake, direction):
-    return True
+# snake - coordinates of snake
+# direction - direction of snake move
+# apple - coordinates of an apple
+def move_snake(snake, direction, apple):
+    return (snake, True, apple)
 
 pixel_size = 20
 screen_size = 1000
