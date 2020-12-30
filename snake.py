@@ -23,10 +23,10 @@ SCREEN_HEIGHT = 1000
 CELL_SIZE = (SCREEN_WIDTH / FIELD_WIDTH, SCREEN_HEIGHT / FIELD_HEIGHT)
 # Задает ориентацию и длинну змеи на старте игры. Позиция змеи задается ниже
 # При расчете размеров экрана
-SNAKE_INITIAL = [(0, 0), (0, 1), (0, 1)]
+SNAKE_INITIAL = [(0, 0), (-1, 0), (-2, 0)]
 # Мы обновляемся не каждый кадр, а с определенной частотой. Это позволяет
 # двигать змею не слишком быстро. Будем пропускать каждые TIME_SCALE миллисекунд
-TIME_SCALE = 50
+TIME_SCALE = 200
 # Имя шрифта, которым будем рисовать все тексты на экране
 FONT_BASE = 'Comic Sans MS'
 
@@ -60,20 +60,24 @@ def move_snake(snake, direction, apple, field_width, field_height):
         возвращает новую позицию яблока. Иначе то же что и пришло на вход.
     """
 
-    head = snake[0]
-    new_head_x = (head[0] + direction[0]) % field_width
-    new_head_y = (head[1] + direction[1]) % field_height
-    new_head = (new_head_x, new_head_y)
-    snake.insert(0, new_head)
+    # head = snake[0]
+    # new_head_x = (head[0] + direction[0]) % field_width
+    # new_head_y = (head[1] + direction[1]) % field_height
+    # new_head = (new_head_x, new_head_y)
+    # snake.insert(0, new_head)
 
-    if new_head == apple:
-        # Съели яблоко, поэтому генерируем новое и не убираем хвост
-        apple = (randint(0, field_width - 1), randint(0, field_height - 1))
-    else:
-        # Удаляем хвост и так эмулируем перемещение.
-        snake.pop(len(snake) - 1)
+    # if new_head == apple:
+    #     # Съели яблоко, поэтому генерируем новое и не убираем хвост
+    #     apple = (randint(0, field_width - 1), randint(0, field_height - 1))
+    # else:
+    #     # Удаляем хвост и так эмулируем перемещение.
+    #     snake.pop(len(snake) - 1)
 
-    return (snake, new_head not in snake[1:], apple)
+    # return (snake, new_head not in snake[1:], apple)
+
+    is_alive = False
+    # Здесь должно быть решение
+    return (snake, is_alive, apple)
 
 def draw_cell(screen, position, color):
     """
