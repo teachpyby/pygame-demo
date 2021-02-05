@@ -1,5 +1,9 @@
 import pygame
 from random import randint
+import functools
+import os
+
+__dir__ = os.path.dirname(os.path.realpath(__file__))
 
 ### Константы
 # Цвет заливки поля
@@ -9,43 +13,52 @@ COLOR_FONT_BASE = (0, 0, 0)
 # Дополнтительный цвет текста
 COLOR_FONT_ALT  = (100, 100, 100)
 # Ширина поля в ячейках
-FIELD_WIDTH = 50
-# Высота поля в ячейках
-FIELD_HEIGHT = 80
+FIELD_WIDTH = 9
+# Высота поля в ячейках. Поле с запасом, чтобы можно было генерить в (0, 0)
+# фигуры и их не было видно
+FIELD_HEIGHT = 25
 # Размеры экрана в пикселях
-SCREEN_WIDTH  = 680
-SCREEN_HEIGHT = 940
+SCREEN_WIDTH  = 590
+SCREEN_HEIGHT = 960
 # Мы обновляемся не каждый кадр, а с определенной частотой. Это позволяет
 # двигать элементы поля не слишком быстро. Будем пропускать каждые
 # TIME_SCALE миллисекунд
 TIME_SCALE = 200
 # Имя шрифта, которым будем рисовать все тексты на экране
 FONT_BASE = 'Comic Sans MS'
-CELL_SIZE = 10
-COLORS = [(255, 0, 0)]
+CELL_SIZE = 44
+COLORS = [
+  (190, 0, 0, 255),
+  (9, 35, 46, 255),
+  (94, 47, 9, 255),
+  (94, 66, 19, 255),
+  (47, 75, 66, 255),
+]
+
+@functools.lru_cache(None)
+def load_image(image):
+    """
+    Загружает каждую текстуру только один раз. Для последующих вызовов с тем же
+    аргументом возвращает закэшированный результат.
+    """
+    print("load_image: loading " + image)
+    image = os.path.join(__dir__, 'resources', image)
+    image = pygame.image.load(image).convert_alpha()
+    return image
 
 
 def draw_field(screen, field, cell_size=CELL_SIZE):
-  field_width = screen.get_width()
-  field_height = screen.get_height()
-  screen.fill((255, 255, 255))
-
-  field_cells = pygame.Surface((field_width - 4, field_height - 4))
-  field_cells.fill((255, 255, 255))
+  chip = load_image('chip.png')
   # Рисуем активные клетки
   for i in range(0, len(field)):
       row = field[i]
       for j in range(0, len(row)):
         cell = row[j]
         if cell > 0:
-          draw_cell(field_cells, (j, i), COLORS[cell - 1], cell_size=cell_size)
-
-  screen.blit(field_cells, (2, 2))
-  pygame.draw.polygon(screen, (0, 0, 0), [
-      (2, 0), (field_width - 2, 0),
-      (field_width - 2, field_height - 2),
-      (2, field_height - 2)
-    ], 2)
+          # tint: красим картинку в нужный цвет
+          c = chip.copy()
+          c.fill(COLORS[cell - 1], special_flags=pygame.BLEND_RGBA_MULT)
+          screen.blit(c, (j * cell_size, screen.get_height() - (len(field) - i) * cell_size))
 
 
 
@@ -70,24 +83,23 @@ def draw(screen, field, score):
     """
     Функция для отрисовки игрового мира.
     """
-    screen_width = screen.get_width()
-    screen_height = screen.get_height()
     font = pygame.font.SysFont(FONT_BASE, 30)
 
-    screen.fill(COLOR_BACKGROUND)
-
+    screen.blit(load_image("background.jpg"), (0, 0))
     # Поле рисуется отдельно, чтобы не сильно заморачиваться с вложенностью
     # координат "поле относительно экрана",
     # "клетка относительно поля относительно экрана", мы будем делать аналог
     # translate(dx, dy), которого в pygame нет. Но можно сделать с помощью blit
-    field_width = FIELD_WIDTH * CELL_SIZE
-    field_height = FIELD_HEIGHT * CELL_SIZE
-    field_surface = pygame.Surface((field_width + 4, field_height + 4))
+    field_width = 936
+    field_height = 846
+    field_surface = pygame.Surface((field_width, field_height), pygame.SRCALPHA, 32)
+    field_surface.convert()
+    field_surface.fill((0, 0, 0, 0))
     draw_field(field_surface, field)
-    screen.blit(field_surface, (20, screen_height - field_height - 20))
+    screen.blit(field_surface, (16, 92))
 
-    hud_text = font.render(f'Score: {score}', True, COLOR_FONT_ALT)
-    screen.blit(hud_text, (10, 10))
+    hud_text = font.render(f'{score}', True, (99, 92, 71))
+    screen.blit(hud_text, (537, 90))
 
 
 def process_events(move_direction):
@@ -121,21 +133,22 @@ def process_events(move_direction):
 
     return (move_direction, running)
 
-def update(field, score):
+def update(field, score, move_direction):
   return (field, score)
 
 def run(screen):
     field = [[0] * FIELD_WIDTH for _ in range(0, FIELD_HEIGHT)]
     field[FIELD_HEIGHT - 1][0] = 1 # Тест
-    field[FIELD_HEIGHT - 1][1] = 1 # Тест
-    field[FIELD_HEIGHT - 1][2] = 1 # Тест
-    field[FIELD_HEIGHT - 1][3] = 1 # Тест
+    field[FIELD_HEIGHT - 1][1] = 2 # Тест
+    field[FIELD_HEIGHT - 1][2] = 3 # Тест
+    field[FIELD_HEIGHT - 1][3] = 4 # Тест
+    field[FIELD_HEIGHT - 1][3] = 5 # Тест
 
-    field[5][0] = 1 # Тест
-    field[5][1] = 1 # Тест
-    field[5][2] = 1 # Тест
-    field[5][3] = 1 # Тест
-    score = 0
+    field[0][0] = 1 # Тест
+    field[0][1] = 2 # Тест
+    field[0][2] = 3 # Тест
+    field[0][3] = 1 # Тест
+    score = 34
     move_direction = (0, 0)
     running = True
 
@@ -151,7 +164,9 @@ def run(screen):
         draw(screen, field, score)
         pygame.display.flip()
 
-        field, score = update(field, score)
+        field, score = update(field, score, move_direction)
+        # чистим направление, нужно только на один апдейт
+        move_direction = (0, 0)
 
 pygame.init()
 pygame.font.init()
