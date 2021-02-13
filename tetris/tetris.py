@@ -50,12 +50,26 @@ def load_image(image):
     image = pygame.image.load(image).convert_alpha()
     return image
 
-def draw_field(screen, field, figure_position, figure_size, cell_size=CELL_SIZE):
+def draw_figure(screen, figure_position, figure, cell_size=CELL_SIZE):
+  chip = load_image('chip.png')
+  for i in range(0, len(figure)):
+    row = figure[i]
+    for j in range(0, len(row)):
+      cell = row[j]
+      if cell > 0:
+        y = screen.get_height() - (figure_position[0] - i + 1) * cell_size
+        x = (j + figure_position[1]) * cell_size
+        xy = (x, y)
+        c = chip.copy()
+        c.fill(COLORS[cell - 1], special_flags=pygame.BLEND_RGBA_MULT)
+        screen.blit(c, xy)
+
+def draw_field(screen, field, figure_position, figure_size, figure, cell_size=CELL_SIZE):
   row_font = pygame.font.SysFont(FONT_BASE, 30)
   position_font = pygame.font.SysFont(FONT_BASE, 10)
 
   chip = load_image('chip.png')
-  # Рисуем активные клетки
+  # Рисуем поле
   for i in range(0, len(field)):
       row = field[i]
       y = screen.get_height() - (i + 1) * cell_size
@@ -65,17 +79,17 @@ def draw_field(screen, field, figure_position, figure_size, cell_size=CELL_SIZE)
       screen.blit(hud_text, (5, y))
 
       for j in range(0, len(row)):
-        cell = row[j]
+        field_cell = row[j]
         xy = (j * cell_size, y)
 
         # debug номер позиции
         hud_text = position_font.render(f'{j}', True, (99, 92, 71))
         screen.blit(hud_text, xy)
 
-        if cell > 0:
+        if field_cell > 0:
           # tint: красим картинку в нужный цвет
           c = chip.copy()
-          c.fill(COLORS[cell - 1], special_flags=pygame.BLEND_RGBA_MULT)
+          c.fill(COLORS[field_cell - 1], special_flags=pygame.BLEND_RGBA_MULT)
           screen.blit(c, xy)
 
 
@@ -106,7 +120,7 @@ def draw_cell(screen, position, color, cell_size = 10):
     #   (x * cell_width, (y + 1), cell_height)
     # ], 2)
 
-def draw(screen, field, figure_position, figure_size, score):
+def draw(screen, field, figure_position, figure_size, score, figure):
     """
     Функция для отрисовки игрового мира.
     """
@@ -122,7 +136,8 @@ def draw(screen, field, figure_position, figure_size, score):
     field_surface = pygame.Surface((field_width, field_height), pygame.SRCALPHA, 32)
     field_surface.convert()
     field_surface.fill((50, 50, 50, 255))
-    draw_field(field_surface, field, figure_position, figure_size)
+    draw_field(field_surface, field, figure_position, figure_size, figure)
+    draw_figure(field_surface, figure_position, figure)
     screen.blit(field_surface, (16, 92 - 6 * CELL_SIZE + 100))
 
     hud_text = font.render(f'{score}', True, (99, 92, 71))
@@ -150,80 +165,90 @@ def process_events(move_direction):
 
     keys = pygame.key.get_pressed()
     if keys[pygame.K_UP]:
-        move_direction = (0, -1)
+        move_direction = (0, 0)
     elif keys[pygame.K_LEFT]:
-        move_direction = (-1, 0)
+        move_direction = (0, -1)
     elif keys[pygame.K_DOWN]:
-        move_direction = (0, 1)
+        move_direction = (0, 0)
     elif keys[pygame.K_RIGHT]:
-        move_direction = (1, 0)
+        move_direction = (0, 1)
 
     return (move_direction, running)
 
-def update(field, figure_position, figure_size):
-#   print(f'position: ${figure_position[0]}, ${figure_position[1]}')
-  if can_move(field, figure_position, figure_size):
-    for i in range(0, figure_size):
-      for j in range(0, figure_size):
-        # figure_position_i = 20
-        # figure_size = 3
-        # i0 = 20 - 3 +
-        i0 = figure_position[0] - figure_size + i
-        j0 = figure_position[1] + j
-        field[i0][j0] = field[i0 + 1][j0]
-        field[i0 + 1][j0] = 0
-    figure_position = (figure_position[0] - 1, figure_position[1])
-
-  return (field, figure_position)
-
-def can_move(field, figure_position, figure_size):
-  return figure_position[0] >= figure_size
-
-
 start_figure_position = (20, 2)
+FIGURE_SIZE = 4
+def get_figure(t):
+  # 0 - l
+  if t == 1:
+    return [
+      [0, 0, t, 0],
+      [0, 0, t, 0],
+      [0, 0, t, 0],
+      [0, 0, t, 0]
+      ]
+  # 1 - z
+  elif t == 2:
+    return [
+      [0, t, t, 0],
+      [0, 0, t, t],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0]
+      ]
+  # 2 - T
+  elif t == 3:
+    return [
+      [0, t, t, t],
+      [0, 0, t, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0]
+      ]
+  # 3 - r
+  elif t == 4:
+    return [
+      [0, 0, t, t],
+      [0, 0, t, 0],
+      [0, 0, t, 0],
+      [0, 0, 0, 0]
+      ]
+  else:
+    raise "ERR"
 
-# 0 - l
-# 1 - z
-# 2 - T
-# 3 - r
-def add_figure(field, figure_type):
-    if figure_type == 0:
-      x = start_figure_position[0]
-      y = start_figure_position[1] + 2
-      field[x][y] = 1
-      field[x - 1][y] = 1
-      field[x - 2][y] = 1
-      field[x - 3][y] = 1
-    elif figure_type == 1:
-      x = start_figure_position[0]
-      y = start_figure_position[1]
-      field[x][y + 1] = 1
-      field[x][y + 2] = 1
-      field[x - 1][y + 2] = 1
-      field[x - 1][y + 3] = 1
-    elif figure_type == 2:
-      x = start_figure_position[0]
-      y = start_figure_position[1]
-      field[x][y + 1] = 1
-      field[x][y + 2] = 1
-      field[x][y + 3] = 1
-      field[x - 1][y + 2] = 1
-    elif figure_type == 3:
-      x = start_figure_position[0]
-      y = start_figure_position[1]
-      field[x][y + 2] = 1
-      field[x][y + 3] = 1
-      field[x - 1][y + 2] = 1
-      field[x - 2][y + 2] = 1
+def update(field, figure_position, figure_size, figure, move_direction):
+  if can_move(field, figure_position, figure, (0, move_direction[1])):
+    figure_position = (figure_position[0], figure_position[1] + move_direction[1])
+  if can_move(field, figure_position, figure, (-1, 0)):
+    figure_position = (figure_position[0] - 1, figure_position[1])
+    return (field, figure_position, figure)
+  else:
+    add_figure_to_field(field, figure_position, figure)
+    return (field, start_figure_position, get_figure(randint(1, 4)))
+
+def add_figure_to_field(field, figure_position, figure):
+  for i in range(0, FIGURE_SIZE):
+    for j in range(0, FIGURE_SIZE):
+      i_f = figure_position[0] - i
+      j_f = figure_position[1] + j
+      if figure[i][j] > 0:
+        field[i_f][j_f] = figure[i][j]
+
+def can_move(field, figure_position, figure, direction):
+  for i in range(0, FIGURE_SIZE):
+    for j in range(0, FIGURE_SIZE):
+      i_f = figure_position[0] - i
+      j_f = figure_position[1] + j
+      hit_vertical = direction[0] < 0 and i_f == 0
+      hit_horizontal = direction[1] != 0 and j_f + direction[1] >= FIGURE_SIZE or j_f + direction[1] < 0 or field[i_f - direction[0]][j_f + direction[1]] > 0
+      if figure[i][j] > 0 and (hit_horizontal or hit_vertical):
+        return False
+  return True
 
 
 def run(screen):
     field = [[0] * FIELD_WIDTH for _ in range(0, FIELD_HEIGHT)]
 
-    figure_size = 4
-    figure_position = start_figure_position
-    add_figure(field, randint(0, 3))
 
+    figure_position = start_figure_position
+    figure = get_figure(1)
 
     score = 0
     move_direction = (0, 0)
@@ -238,13 +263,14 @@ def run(screen):
         if pygame.time.get_ticks() % TIME_SCALE != 0:
             continue
 
-        draw(screen, field, figure_position, figure_size, score)
+        draw(screen, field, figure_position, FIGURE_SIZE, score, figure)
         pygame.display.flip()
 
-        field, figure_position = update(field, figure_position, figure_size)
+        print(move_direction)
+        field, figure_position, figure = update(field, figure_position, FIGURE_SIZE, figure, move_direction)
 
         # # чистим направление, нужно только на один апдейт
-        # move_direction = (0, 0)
+        move_direction = (0, 0)
 
 pygame.init()
 pygame.font.init()
