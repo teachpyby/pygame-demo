@@ -4,6 +4,8 @@ import functools
 import os
 import sys
 
+from pygame import math
+
 __dir__ = os.path.dirname(os.path.realpath(__file__))
 
 
@@ -56,11 +58,12 @@ def draw_field(screen, field, figure_position, figure_size, cell_size=CELL_SIZE)
   # Рисуем активные клетки
   for i in range(0, len(field)):
       row = field[i]
-      y = screen.get_height() - i * cell_size
+      y = screen.get_height() - (i + 1) * cell_size
 
       # debug номер ряда
       hud_text = row_font.render(f'{i}', True, (99, 92, 71))
       screen.blit(hud_text, (5, y))
+
       for j in range(0, len(row)):
         cell = row[j]
         xy = (j * cell_size, y)
@@ -78,11 +81,11 @@ def draw_field(screen, field, figure_position, figure_size, cell_size=CELL_SIZE)
 
 
   x = figure_position[1] * cell_size
-  y = screen.get_height() - (figure_position[0]) * cell_size
+  y = screen.get_height() - (figure_position[0] + 1) * cell_size
   w = figure_size * cell_size
   h = figure_size * cell_size
 
-  # draw прямоугольник
+  # debug прямоугольник
   pygame.draw.polygon(screen, (0, 0, 0), [
     (x, y), (x + w, y), (x + w, y + h), (x, y + h)
   ], 1)
@@ -219,7 +222,8 @@ def run(screen):
 
     figure_size = 4
     figure_position = start_figure_position
-    add_figure(field, 3)
+    add_figure(field, randint(0, 3))
+
 
     score = 0
     move_direction = (0, 0)
@@ -238,6 +242,7 @@ def run(screen):
         pygame.display.flip()
 
         field, figure_position = update(field, figure_position, figure_size)
+
         # # чистим направление, нужно только на один апдейт
         # move_direction = (0, 0)
 
