@@ -176,15 +176,50 @@ def update(field, figure_position, figure_size):
 def can_move(field, figure_position, figure_size):
   return figure_position[0] >= figure_size
 
+
+start_figure_position = (20, 2)
+
+# 0 - l
+# 1 - z
+# 2 - T
+# 3 - r
+def add_figure(field, figure_type):
+    if figure_type == 0:
+      x = start_figure_position[0]
+      y = start_figure_position[1] + 2
+      field[x][y] = 1
+      field[x - 1][y] = 1
+      field[x - 2][y] = 1
+      field[x - 3][y] = 1
+    elif figure_type == 1:
+      x = start_figure_position[0]
+      y = start_figure_position[1]
+      field[x][y + 1] = 1
+      field[x][y + 2] = 1
+      field[x - 1][y + 2] = 1
+      field[x - 1][y + 3] = 1
+    elif figure_type == 2:
+      x = start_figure_position[0]
+      y = start_figure_position[1]
+      field[x][y + 1] = 1
+      field[x][y + 2] = 1
+      field[x][y + 3] = 1
+      field[x - 1][y + 2] = 1
+    elif figure_type == 3:
+      x = start_figure_position[0]
+      y = start_figure_position[1]
+      field[x][y + 2] = 1
+      field[x][y + 3] = 1
+      field[x - 1][y + 2] = 1
+      field[x - 2][y + 2] = 1
+
+
 def run(screen):
     field = [[0] * FIELD_WIDTH for _ in range(0, FIELD_HEIGHT)]
 
     figure_size = 4
-    figure_position = (20, 0)
-    field[20][1] = 2 # Тест
-    field[20][2] = 2 # Тест
-    field[19][2] = 2 # Тест
-    field[19][3] = 2 # Тест
+    figure_position = start_figure_position
+    add_figure(field, 3)
 
     score = 0
     move_direction = (0, 0)
