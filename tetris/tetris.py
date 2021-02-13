@@ -2,8 +2,10 @@ import pygame
 from random import randint
 import functools
 import os
+import sys
 
 __dir__ = os.path.dirname(os.path.realpath(__file__))
+
 
 ### Константы
 # Цвет заливки поля
@@ -23,7 +25,7 @@ SCREEN_HEIGHT = 960 + 100 # убрать
 # Мы обновляемся не каждый кадр, а с определенной частотой. Это позволяет
 # двигать элементы поля не слишком быстро. Будем пропускать каждые
 # TIME_SCALE миллисекунд
-TIME_SCALE = 800
+TIME_SCALE = 800 if sys.argv[1] is None else int(sys.argv[1])
 # Имя шрифта, которым будем рисовать все тексты на экране
 FONT_BASE = 'Comic Sans MS'
 CELL_SIZE = 44
@@ -47,26 +49,40 @@ def load_image(image):
     return image
 
 def draw_field(screen, field, figure_position, figure_size, cell_size=CELL_SIZE):
+  row_font = pygame.font.SysFont(FONT_BASE, 30)
+  position_font = pygame.font.SysFont(FONT_BASE, 10)
+
   chip = load_image('chip.png')
   # Рисуем активные клетки
   for i in range(0, len(field)):
       row = field[i]
+      y = screen.get_height() - i * cell_size
+
+      # debug номер ряда
+      hud_text = row_font.render(f'{i}', True, (99, 92, 71))
+      screen.blit(hud_text, (5, y))
       for j in range(0, len(row)):
         cell = row[j]
+        xy = (j * cell_size, y)
+
+        # debug номер позиции
+        hud_text = position_font.render(f'{j}', True, (99, 92, 71))
+        screen.blit(hud_text, xy)
+
         if cell > 0:
           # tint: красим картинку в нужный цвет
           c = chip.copy()
           c.fill(COLORS[cell - 1], special_flags=pygame.BLEND_RGBA_MULT)
-          y = screen.get_height() - (i) * cell_size
-          xy = (j * cell_size, y)
           screen.blit(c, xy)
+
+
 
   x = figure_position[1] * cell_size
   y = screen.get_height() - (figure_position[0]) * cell_size
   w = figure_size * cell_size
   h = figure_size * cell_size
 
-  # draw debug wrap rectangle
+  # draw прямоугольник
   pygame.draw.polygon(screen, (0, 0, 0), [
     (x, y), (x + w, y), (x + w, y + h), (x, y + h)
   ], 1)
