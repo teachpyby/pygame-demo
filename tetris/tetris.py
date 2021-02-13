@@ -37,7 +37,54 @@ COLORS = [
   (94, 47, 9, 255),
   (94, 66, 19, 255),
   (47, 75, 66, 255),
+  (9, 35, 46, 255),
+  (190, 0, 0, 255),
 ]
+
+TETROMINOS = {
+    'I': [
+      [0, 0, 1, 0],
+      [0, 0, 1, 0],
+      [0, 0, 1, 0],
+      [0, 0, 1, 0]
+      ],
+    'z': [
+      [0, 1, 1, 0],
+      [0, 0, 1, 1],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0]
+      ],
+    'T': [
+      [0, 1, 1, 1],
+      [0, 0, 1, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0]
+      ],
+    'L': [
+      [0, 0, 1, 0],
+      [0, 0, 1, 0],
+      [0, 0, 1, 1],
+      [0, 0, 0, 0]
+      ],
+    'J': [
+      [0, 0, 1, 0],
+      [0, 0, 1, 0],
+      [0, 1, 1, 0],
+      [0, 0, 0, 0]
+      ],
+    's': [
+      [0, 0, 1, 1],
+      [0, 1, 1, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0]
+      ],
+    'o': [
+      [0, 0, 0, 0],
+      [0, 1, 1, 0],
+      [0, 1, 1, 0],
+      [0, 0, 0, 0]
+      ]
+  }
 
 @functools.lru_cache(None)
 def load_image(image):
@@ -177,51 +224,34 @@ def process_events(move_direction):
 
 start_figure_position = (20, 2)
 FIGURE_SIZE = 4
-def get_figure(t):
-  # 0 - l
-  if t == 1:
-    return [
-      [0, 0, t, 0],
-      [0, 0, t, 0],
-      [0, 0, t, 0],
-      [0, 0, t, 0]
-      ]
-  # 1 - z
-  elif t == 2:
-    return [
-      [0, t, t, 0],
-      [0, 0, t, t],
-      [0, 0, 0, 0],
-      [0, 0, 0, 0]
-      ]
-  # 2 - T
-  elif t == 3:
-    return [
-      [0, t, t, t],
-      [0, 0, t, 0],
-      [0, 0, 0, 0],
-      [0, 0, 0, 0]
-      ]
-  # 3 - r
-  elif t == 4:
-    return [
-      [0, 0, t, t],
-      [0, 0, t, 0],
-      [0, 0, t, 0],
-      [0, 0, 0, 0]
-      ]
-  else:
-    raise "ERR"
 
-def update(field, figure_position, figure_size, figure, move_direction):
-  if can_move(field, figure_position, figure, (0, move_direction[1])):
-    figure_position = (figure_position[0], figure_position[1] + move_direction[1])
-  if can_move(field, figure_position, figure, (-1, 0)):
-    figure_position = (figure_position[0] - 1, figure_position[1])
-    return (field, figure_position, figure)
+def get_figure(t = None):
+  types = list(TETROMINOS)
+  if t:
+    id = types.index(t)
   else:
-    add_figure_to_field(field, figure_position, figure)
-    return (field, start_figure_position, get_figure(randint(1, 4)))
+    id = randint(0, len(types))
+
+  tetromino = TETROMINOS[types[id]]
+  print(tetromino)
+  # Создаем копию со своим id, id нужен для цвета
+  return [[0 if c == 0 else (id + 1) for c in row ] for row in tetromino]
+
+def update(field, figure_position, figure, move_direction):
+  # Если не можем сдвинуться по горизонтали, то просто ничего не делаем,
+  # считаем что "уперлись"
+  position = (figure_position[0], figure_position[1])
+  if can_apply(field, (position[0], position[1] + move_direction[1]), figure):
+    position = (position[0], position[1] + move_direction[1])
+
+  if can_apply(field, (position[0] + move_direction[0], position[1]), figure):
+    position = (position[0] + move_direction[0], position[1])
+  else:
+    add_figure_to_field(field, position, figure)
+    position = start_figure_position
+    figure = get_figure()
+
+  return (field, position, figure)
 
 def add_figure_to_field(field, figure_position, figure):
   for i in range(0, FIGURE_SIZE):
@@ -230,6 +260,38 @@ def add_figure_to_field(field, figure_position, figure):
       j_f = figure_position[1] + j
       if figure[i][j] > 0:
         field[i_f][j_f] = figure[i][j]
+
+def can_apply(field, figure_position, figure):
+  """
+  Определяет можем ли мы поставить фигуру в указанную позицию. Нам нужно
+  проверить следующие условия:
+    * ни одна занятая клетка фигуры не накладывается на занятую клетку поля
+    * занятые клетки фигуры не находятся за пределами поля (по вертикали)
+    * занятые клетки фигруы не находятся за пределами поля (по горизонтали)
+  """
+  for i in range(0, len(figure)):
+    row = figure[i]
+    for j in range(0, len(row)):
+      i0 = figure_position[0] - i
+      j0 = figure_position[1] + j
+      # Мы не обрабатываем пустые клетки фигуры
+      if figure[i][j] == 0:
+        continue
+
+      # Вышли за границу поля по вертикали
+      if i0 < 0:
+        return False
+
+      # Вышли за границу поля по горизонтали
+      if j0 < 0 or j0 >= len(field[i0]):
+        return False
+
+      # Если клетка на поле занята, то мы не можем применить такое положение
+      # фигуры
+      if field[i0][j0] > 0:
+        return False
+
+  return True
 
 def can_move(field, figure_position, figure, direction):
   for i in range(0, FIGURE_SIZE):
@@ -248,7 +310,7 @@ def run(screen):
 
 
     figure_position = start_figure_position
-    figure = get_figure(1)
+    figure = get_figure('I')
 
     score = 0
     move_direction = (0, 0)
@@ -266,8 +328,8 @@ def run(screen):
         draw(screen, field, figure_position, FIGURE_SIZE, score, figure)
         pygame.display.flip()
 
-        print(move_direction)
-        field, figure_position, figure = update(field, figure_position, FIGURE_SIZE, figure, move_direction)
+        field, figure_position, figure = update(field, figure_position, figure, move_direction)
+        field, figure_position, figure = update(field, figure_position, figure, (-1, 0))
 
         # # чистим направление, нужно только на один апдейт
         move_direction = (0, 0)
