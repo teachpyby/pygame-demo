@@ -57,7 +57,7 @@ def draw_field(screen, field, figure_position, figure_size, cell_size=CELL_SIZE)
           # tint: красим картинку в нужный цвет
           c = chip.copy()
           c.fill(COLORS[cell - 1], special_flags=pygame.BLEND_RGBA_MULT)
-          y = screen.get_height() - (i + 1) * cell_size
+          y = screen.get_height() - (i) * cell_size
           xy = (j * cell_size, y)
           screen.blit(c, xy)
 
@@ -66,8 +66,9 @@ def draw_field(screen, field, figure_position, figure_size, cell_size=CELL_SIZE)
   w = figure_size * cell_size
   h = figure_size * cell_size
 
+  # draw debug wrap rectangle
   pygame.draw.polygon(screen, (0, 0, 0), [
-    (x, y), (x + w, y), (x + w, y - h), (x, y - h)
+    (x, y), (x + w, y), (x + w, y + h), (x, y + h)
   ], 1)
 
 def draw_cell(screen, position, color, cell_size = 10):
@@ -141,7 +142,7 @@ def process_events(move_direction):
     return (move_direction, running)
 
 def update(field, figure_position, figure_size):
-  print(f'position: ${figure_position[0]}, ${figure_position[1]}')
+#   print(f'position: ${figure_position[0]}, ${figure_position[1]}')
   if can_move(field, figure_position, figure_size):
     for i in range(0, figure_size):
       for j in range(0, figure_size):
@@ -162,12 +163,12 @@ def can_move(field, figure_position, figure_size):
 def run(screen):
     field = [[0] * FIELD_WIDTH for _ in range(0, FIELD_HEIGHT)]
 
-    figure_size = 3
+    figure_size = 4
     figure_position = (20, 0)
-    field[20][0] = 2 # Тест
     field[20][1] = 2 # Тест
-    field[19][1] = 2 # Тест
+    field[20][2] = 2 # Тест
     field[19][2] = 2 # Тест
+    field[19][3] = 2 # Тест
 
     score = 0
     move_direction = (0, 0)
