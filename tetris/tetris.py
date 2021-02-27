@@ -254,15 +254,33 @@ def update(field, figure_position, figure, move_direction):
   return (field, position, figure)
 
 def update_rows(field):
-  for i in range(0, len(field) - 1):
+  i = 0
+  while i < len(field) - 1:
     row = field[i]
-
     c = row[0]
+
     should_clean = True
     for j in range(0, len(row)):
-      if row[j] != c:
+      if row[j] == 0:
+        should_clean = False
         break
 
+    if should_clean:
+      field[i] = [0] * len(row)
+
+    row = field[i]
+
+    should_swap = True
+    for j in range(0, len(row)):
+      if row[j] != 0:
+        should_swap = False
+        break
+
+    if should_swap and should_clean:
+      field.pop(i)
+      field.append([0] * len(row))
+    else:
+      i+=1
 
 
 def add_figure_to_field(field, figure_position, figure):
@@ -334,7 +352,9 @@ def run(screen):
 
         if last_update_vert + TIME_SCALE < pygame.time.get_ticks():
           field, figure_position, figure = update(field, figure_position, figure, (-1, 0))
+          update_rows(field)
           last_update_vert = pygame.time.get_ticks()
+
 
         # чистим направление, нужно только на один апдейт
         move_direction = (0, 0)
