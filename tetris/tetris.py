@@ -230,7 +230,7 @@ def get_figure(t = None):
   if t:
     id = types.index(t)
   else:
-    id = randint(0, len(types))
+    id = randint(0, len(types) - 1)
 
   tetromino = TETROMINOS[types[id]]
   print(tetromino)
@@ -252,6 +252,18 @@ def update(field, figure_position, figure, move_direction):
     figure = get_figure()
 
   return (field, position, figure)
+
+def update_rows(field):
+  for i in range(0, len(field) - 1):
+    row = field[i]
+
+    c = row[0]
+    should_clean = True
+    for j in range(0, len(row)):
+      if row[j] != c:
+        break
+
+
 
 def add_figure_to_field(field, figure_position, figure):
   for i in range(0, FIGURE_SIZE):
@@ -293,18 +305,6 @@ def can_apply(field, figure_position, figure):
 
   return True
 
-def can_move(field, figure_position, figure, direction):
-  for i in range(0, FIGURE_SIZE):
-    for j in range(0, FIGURE_SIZE):
-      i_f = figure_position[0] - i
-      j_f = figure_position[1] + j
-      hit_vertical = direction[0] < 0 and i_f == 0
-      hit_horizontal = direction[1] != 0 and j_f + direction[1] >= FIGURE_SIZE or j_f + direction[1] < 0 or field[i_f - direction[0]][j_f + direction[1]] > 0
-      if figure[i][j] > 0 and (hit_horizontal or hit_vertical):
-        return False
-  return True
-
-
 def run(screen):
     field = [[0] * FIELD_WIDTH for _ in range(0, FIELD_HEIGHT)]
 
@@ -316,23 +316,29 @@ def run(screen):
     move_direction = (0, 0)
     running = True
 
+    last_update_vert = pygame.time.get_ticks()
+    last_update_horiz = pygame.time.get_ticks()
+
     while running:
         # Всегда обрабатываем пользовательский ввод и рисуем сцену.
         # Пользовательский ввод нужно обрабатывать, чтобы змейка была более
         # отзывчивой. Если пропускать этот шаг, то управление будет "лагать".
         move_direction, running = process_events(move_direction)
 
-        if pygame.time.get_ticks() % TIME_SCALE != 0:
-            continue
-
         draw(screen, field, figure_position, FIGURE_SIZE, score, figure)
         pygame.display.flip()
 
-        field, figure_position, figure = update(field, figure_position, figure, move_direction)
-        field, figure_position, figure = update(field, figure_position, figure, (-1, 0))
+        if last_update_horiz + 100 < pygame.time.get_ticks():
+          field, figure_position, figure = update(field, figure_position, figure, move_direction)
+          last_update_horiz = pygame.time.get_ticks()
 
-        # # чистим направление, нужно только на один апдейт
+        if last_update_vert + TIME_SCALE < pygame.time.get_ticks():
+          field, figure_position, figure = update(field, figure_position, figure, (-1, 0))
+          last_update_vert = pygame.time.get_ticks()
+
+        # чистим направление, нужно только на один апдейт
         move_direction = (0, 0)
+
 
 pygame.init()
 pygame.font.init()
